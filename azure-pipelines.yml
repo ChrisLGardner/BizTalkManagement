@@ -1,0 +1,55 @@
+name: $(GitVersion.SemVer)
+resources:
+- repo: self
+  fetchDepth: 15
+
+trigger:
+  - master
+
+queue:
+  name: Hosted VS2017
+steps:
+- task: gittools.gitversion.gitversion-task.GitVersion@4
+  displayName: GitVersion
+  inputs:
+    preferBundledVersion: false
+
+- task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
+  displayName: 'Pester Test Runner'
+  inputs:
+    scriptFolder: '$(System.DefaultWorkingDirectory)\Tests\*'
+    resultsFile: '$(System.DefaultWorkingDirectory)\Test.xml'
+    CodeCoverageOutputFile: '$(System.DefaultWorkingDirectory)\Coverage.xml'
+    CodeCoverageFolder: '$(System.DefaultWorkingDirectory)\PSModuleDevelopment.psm1'
+  enabled: false
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results **/Test.xml'
+  inputs:
+    testResultsFormat: NUnit
+    testResultsFiles: '**/Test.xml'
+  enabled: false
+  condition: succeededOrFailed()
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage from $(System.DefaultWorkingDirectory)\Coverage.xml'
+  inputs:
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)\Coverage.xml'
+  enabled: false
+  condition: succeededOrFailed()
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)\Output'
+    Contents: |
+     **\*.psm1
+     **\*.psd1
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: BizTalkManagement'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  inputs:
+    ArtifactName: BizTalkManagement
