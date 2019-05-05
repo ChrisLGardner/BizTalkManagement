@@ -37,7 +37,7 @@ if ($PublicFunctions -or $PrivateFunctions) {
     Write-Verbose -message "Found Private or Public functions. Will compile these into the psm1 and only export public functions."
 
     Foreach ($PrivateFunction in $PrivateFunctions) {
-        Get-Content -Path $PrivateFunction.FullName | Add-Content -Path $DestinationModule
+        Get-Content -Path $PrivateFunction.FullName | Add-Content -Path $DestinationModule -Encoding UTF8
     }
     Write-Verbose -Message "Found $($PrivateFunctions.Count) Private functions and added them to the psm1."
 }
@@ -48,7 +48,7 @@ else {
 }
 
 Foreach ($PublicFunction in $PublicFunctions) {
-    Get-Content -Path $PublicFunction.FullName | Add-Content -Path $DestinationModule
+    Get-Content -Path $PublicFunction.FullName | Add-Content -Path $DestinationModule -Encoding UTF8
 }
 Write-Verbose -Message "Found $($PublicFunctions.Count) Public functions and added them to the psm1."
 
