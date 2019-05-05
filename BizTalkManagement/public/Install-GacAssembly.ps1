@@ -1,16 +1,26 @@
 function Install-GacAssembly {
+    [cmdletbinding()]
     param
     (
-        $AssemblyName,
-        $AssemblyLocation
+        [Parameter()]
+        [string]$AssemblyName,
+
+        [Parameter()]
+        [ValidateScript( {
+                if (-not(Test-Path -Path $_)) {
+                    $PSCmdlet.ThrowTerminatingError(
+                        (New-Object -TypeName System.Management.Automation.ItemNotFoundException -ArgumentList "Unable to find $_")
+                    )
+                }
+                $true
+            })]
+        [System.Io.FileInfo]$AssemblyLocation
     )
-    [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
-    $settingsdll = Get-ChildItem -Path $AssemblyLocation -Filter $AssemblyName -Recurse
+
+    Add-Type -AssemblyName "System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+
+    $settingsdll = Get-ChildItem -Path $AssemblyLocation -Filter $AssemblyName -Recurse | Select-Object -First 1
     $publish = New-Object System.EnterpriseServices.Internal.Publish
-    if ($settingsdll -is [System.Array]) {
-        $publish.GacInstall($($settingsdll[0].FullName))
-    }
-    else {
-        $publish.GacInstall($($settingsdll.FullName))
-    }
+
+    $publish.GacInstall($settingsdll.FullName)
 }
